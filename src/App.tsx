@@ -67,7 +67,7 @@ function App() {
             </p>
             <div className="flex justify-center gap-10">
               <a href="https://instagram.com/d8_creative" target="_blank" rel="noreferrer" className="text-white/40 hover:text-brand-yellow transition-colors font-black text-[10px] uppercase tracking-widest">Instagram</a>
-              <a href="#" className="text-white/40 hover:text-brand-yellow transition-colors font-black text-[10px] uppercase tracking-widest">LinkedIn</a>
+              <a href="https://www.linkedin.com/in/dar%C3%ADo-david-espinosa-b50972258/" className="text-white/40 hover:text-brand-yellow transition-colors font-black text-[10px] uppercase tracking-widest">LinkedIn</a>
             </div>
           </div>
         </footer>

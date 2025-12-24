@@ -1,10 +1,18 @@
 import { motion } from "framer-motion";
-import { ArrowLeft, Instagram, Globe, TrendingUp } from "lucide-react";
+import { ArrowLeft, Instagram, Globe, TrendingUp, Youtube } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const brandingProjects = [
   {
     id: 1,
+    name: "Top Cinema",
+    handle: "YouTube (500k subs)",
+    tag: "YouTube / Motion Graphics",
+    description: "Edición integral de video para plataforma de alta escala. Diseño de identidad visual, placas dinámicas y Motion Graphics para retención de audiencia.",
+    stats: ["Motion Design", "Engagement Opt.", "High-End Editing"],
+  },
+  {
+    id: 2,
     name: "J-Barber",
     handle: "@j.barber_ok",
     tag: "Web & Gestión",
@@ -13,7 +21,7 @@ const brandingProjects = [
     externalLink: "https://j-barber.vercel.app"
   },
   {
-    id: 2,
+    id: 3,
     name: "City Rock",
     handle: "@cityrock.restobar",
     tag: "Gastronomía / Web",
@@ -22,7 +30,7 @@ const brandingProjects = [
     externalLink: "https://cityrock.netlify.app"
   },
   {
-    id: 3,
+    id: 4,
     name: "Coronada Jeans",
     handle: "@coronadajeans",
     tag: "Ads & Trafficker",
@@ -30,7 +38,7 @@ const brandingProjects = [
     stats: ["Meta Ads Expert", "ROI Positivo", "Escalado de Ventas"],
   },
   {
-    id: 4,
+    id: 5,
     name: "Rayitos y Colores",
     handle: "@rayitosycolores",
     tag: "Social Media",
@@ -38,7 +46,7 @@ const brandingProjects = [
     stats: ["Content Strategy", "Growth Orgánico", "Community Management"],
   },
   {
-    id: 5,
+    id: 6,
     name: "Wakamole",
     handle: "@wakamolejunin",
     tag: "Gastronomía",
@@ -46,12 +54,36 @@ const brandingProjects = [
     stats: ["Engagement Boost", "Branding", "Creative Ads"],
   },
   {
-    id: 6,
+    id: 7,
     name: "Ecoplak",
     handle: "@eecoplak",
     tag: "Construcción",
     description: "Posicionamiento premium de marca y generación de leads calificados para proyectos de construcción en seco.",
     stats: ["B2B Leads", "Estrategia 360", "Brand Authority"],
+  },
+  {
+    id: 8,
+    name: "Susy Bombonería",
+    handle: "@susy.bomboneria",
+    tag: "Tercerizado / Filmación",
+    description: "Captura técnica de producto y narrativa visual enfocada en el detalle para flujos de post-producción externa.",
+    stats: ["Visual Assets", "Lighting", "Product Film"],
+  },
+  {
+    id: 9,
+    name: "Center Gol",
+    handle: "@centergol.ok",
+    tag: "Tercerizado / Filmación",
+    description: "Cobertura cinematográfica de dinámica deportiva e instalaciones. Generación de recursos para campañas publicitarias.",
+    stats: ["Action Cam", "Dynamic Shots", "RAW Assets"],
+  },
+  {
+    id: 10,
+    name: "Piedra Negra",
+    handle: "@piedranegra.junin",
+    tag: "Tercerizado / Filmación",
+    description: "Captura de contenido bruto (RAW) optimizado para edición de alta velocidad y cobertura de marca.",
+    stats: ["Filming", "Capture Specialist", "Workflow"],
   }
 ];
 
@@ -70,7 +102,7 @@ const BrandingPortfolio = () => {
             Branding & <span className="text-brand-yellow">Estrategia</span>
           </h1>
           <p className="text-brand-gray max-w-2xl mx-auto uppercase tracking-widest text-xs">
-            Casos de éxito: Desde la primera línea de código hasta el último click en tus Ads.
+            Desde canales de 500k subs hasta el desarrollo de tu próxima App Web.
           </p>
         </div>
 
@@ -90,15 +122,10 @@ const BrandingPortfolio = () => {
                   </span>
                 </div>
                 
-                <h2 className="text-2xl font-black text-white uppercase group-hover:text-brand-yellow transition-colors">{project.name}</h2>
-                <a 
-                  href={`https://instagram.com/${project.handle.replace('@','')}`} 
-                  target="_blank" 
-                  rel="noreferrer"
-                  className="text-brand-gray hover:text-white transition-colors text-xs flex items-center gap-1 mt-1 mb-4"
-                >
-                  <Instagram size={12} /> {project.handle}
-                </a>
+                <h2 className="text-2xl font-black text-white uppercase group-hover:text-brand-yellow transition-colors leading-tight">{project.name}</h2>
+                <div className="text-brand-gray text-xs flex items-center gap-1 mt-1 mb-4">
+                  {project.id === 1 ? <Youtube size={12} /> : <Instagram size={12} />} {project.handle}
+                </div>
 
                 <p className="text-gray-400 text-sm leading-relaxed mb-6 italic min-h-15">
                   "{project.description}"
@@ -119,7 +146,7 @@ const BrandingPortfolio = () => {
                     href={project.externalLink} 
                     target="_blank" 
                     rel="noreferrer"
-                    className="flex items-center justify-center gap-2 w-full py-3 bg-white/5 hover:bg-brand-yellow hover:text-black rounded-xl text-xs font-black uppercase tracking-tighter transition-all"
+                    className="flex items-center justify-center gap-2 w-full py-3 bg-white/5 hover:bg-brand-yellow hover:text-black rounded-xl text-[10px] font-black uppercase tracking-tighter transition-all"
                   >
                     <Globe size={14} /> Visitar Web
                   </a>
