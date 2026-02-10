@@ -25,6 +25,16 @@ export const services = [
     image: "/SMd8.png",
     link: "/branding",
     cta: "Ver Casos"
+  },
+
+  {
+    id: 4,
+    title: "Tarjetas Digitales",
+    category: "INTERACTIVOS",
+    description: "Invitaciones digitales de alto impacto para eventos sociales y corporativos.",
+    image: "/pcd8.png", // Podés usar tu avatar o crear uno nuevo con una tarjeta en la mano
+    link: "/tarjetas",
+    cta: "Explorar Modelos"
   }
 ];
 
