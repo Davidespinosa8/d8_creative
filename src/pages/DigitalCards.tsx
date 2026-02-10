@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { ArrowLeft, Globe, Sparkles, Gift, Heart } from "lucide-react";
+import { ArrowLeft, Globe, Sparkles } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const digitalCards = [
