@@ -57,7 +57,7 @@ function App() {
             <Route path="/" element={<Home onContact={() => setIsContactOpen(true)} />} />
             <Route path="/audiovisual" element={<VideoPortfolio />} />
             <Route path="/branding" element={<BrandingPortfolio />} />
-            <Route path="/tarjetas" element={<DigitalCards />} /> {/* NUEVA RUTA */}
+            <Route path="/tarjetas" element={<DigitalCards />} /> 
           </Routes>
         </div>
 

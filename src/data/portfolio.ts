@@ -32,7 +32,7 @@ export const services = [
     title: "Tarjetas Digitales",
     category: "INTERACTIVOS",
     description: "Invitaciones digitales de alto impacto para eventos sociales y corporativos.",
-    image: "/pcd8.png", // Podés usar tu avatar o crear uno nuevo con una tarjeta en la mano
+    image: "/D8-cartas.png",
     link: "/tarjetas",
     cta: "Explorar Modelos"
   }
