@@ -6,6 +6,7 @@ import VideoPortfolio from "./pages/VideoPortfolio";
 import BrandingPortfolio from "./pages/BrandingPortfolio";
 import ContactModal from "./components/ContactModal";
 import DigitalCards from "./pages/DigitalCards";
+import WebPortfolio from "./pages/WebPortfolio";
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -57,7 +58,8 @@ function App() {
             <Route path="/" element={<Home onContact={() => setIsContactOpen(true)} />} />
             <Route path="/audiovisual" element={<VideoPortfolio />} />
             <Route path="/branding" element={<BrandingPortfolio />} />
-            <Route path="/tarjetas" element={<DigitalCards />} /> 
+            <Route path="/tarjetas" element={<DigitalCards />} />
+            <Route path="/web" element={<WebPortfolio />} /> 
           </Routes>
         </div>
 
