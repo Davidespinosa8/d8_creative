@@ -9,8 +9,8 @@ const digitalCards = [
     tag: "Casamiento / Invitación Interactiva",
     description: "Invitación digital mobile-first con cuenta regresiva, ceremonia civil, iglesia, fiesta, dress code, regalos y confirmación de asistencia.",
     stats: ["Next.js", "TypeScript", "Framer Motion"],
-    externalLink: "https://github.com/Davidespinosa8/Casamientopauliymartin",
-    linkLabel: "Ver Proyecto en GitHub"
+    externalLink: "https://casamientopauliymartin.vercel.app/",
+    linkLabel: "Ver Invitación"
   },
   {
     id: 1,
