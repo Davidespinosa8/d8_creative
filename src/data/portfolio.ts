@@ -5,7 +5,7 @@ export const services = [
     category: "FULL STACK",
     description: "Desarrollo de sitios web de alto impacto, interactivos y escalables con React.",
     image: "/pcd8.png", 
-    link: "https://myprofile-delta-roan.vercel.app/",
+    link: "/web",
     cta: "Ver Portfolio Web"
   },
   {
