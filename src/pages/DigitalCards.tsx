@@ -4,6 +4,15 @@ import { Link } from "react-router-dom";
 
 const digitalCards = [
   {
+    id: 6,
+    name: "Pauli & Martín",
+    tag: "Casamiento / Invitación Interactiva",
+    description: "Invitación digital mobile-first con cuenta regresiva, ceremonia civil, iglesia, fiesta, dress code, regalos y confirmación de asistencia.",
+    stats: ["Next.js", "TypeScript", "Framer Motion"],
+    externalLink: "https://github.com/Davidespinosa8/Casamientopauliymartin",
+    linkLabel: "Ver Proyecto en GitHub"
+  },
+  {
     id: 1,
     name: "XV - Berenice",
     tag: "Evento Social / XV",
@@ -105,7 +114,7 @@ const DigitalCards = () => {
                   rel="noreferrer"
                   className="flex items-center justify-center gap-2 w-full py-3 bg-white/5 hover:bg-brand-yellow hover:text-black rounded-xl text-[10px] font-black uppercase tracking-tighter transition-all"
                 >
-                  <Globe size={14} /> Ver Invitación Live
+                  <Globe size={14} /> {"linkLabel" in card ? card.linkLabel : "Ver Invitación Live"}
                 </a>
               </div>
             </motion.div>
