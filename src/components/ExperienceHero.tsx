@@ -10,6 +10,7 @@ export default function ExperienceHero({ onContactClick }: ExperienceHeroProps) 
   const [booting, setBooting] = useState(true);
   const [pointer, setPointer] = useState({ x: 0, y: 0 });
   const [tvOpen, setTvOpen] = useState(false);
+  const [videoUnavailable, setVideoUnavailable] = useState(false);
 
   useEffect(() => {
     if (reducedMotion) return;
@@ -75,7 +76,13 @@ export default function ExperienceHero({ onContactClick }: ExperienceHeroProps) 
               style={reducedMotion ? undefined : { rotateY: pointer.x * 9, rotateX: pointer.y * -7 }}
               className="relative z-10 w-[84%] max-w-[490px] [transform-style:preserve-3d]"
             >
-              <img src="/avatard8.png" alt="Mascota pixel art D8 Creative" fetchPriority="high" className="h-auto w-full object-contain drop-shadow-[0_28px_40px_rgba(0,0,0,0.65)]" />
+              {!reducedMotion && !videoUnavailable ? (
+                <video autoPlay muted loop playsInline preload="metadata" poster="/d8-hero-poster.webp" onError={() => setVideoUnavailable(true)} aria-label="Mascota D8 Creative animada" className="h-auto w-full rounded-3xl object-contain drop-shadow-[0_28px_40px_rgba(0,0,0,0.65)]">
+                  <source src="/d8-hero-loop.mp4" type="video/mp4" />
+                </video>
+              ) : (
+                <img src="/avatard8.png" alt="Mascota pixel art D8 Creative" fetchPriority="high" className="h-auto w-full object-contain drop-shadow-[0_28px_40px_rgba(0,0,0,0.65)]" />
+              )}
             </motion.div>
             <div className="absolute bottom-6 right-0 z-20 max-w-[210px] rounded-2xl border border-brand-yellow/25 bg-black/65 p-4 backdrop-blur-xl">
               <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-brand-yellow">D8 / PLAY</span>
