@@ -85,7 +85,7 @@ export default function ExperienceHero({ onContactClick }: ExperienceHeroProps) 
 
       <section
         ref={heroSectionRef}
-        className="relative isolate min-h-[165vh] border-b border-white/10 bg-[#0b0b0e] text-white"
+        className="relative isolate h-[230vh] border-b border-white/10 bg-[#080a0d] text-white"
         onPointerMove={(event) => {
           if (reducedMotion || event.pointerType !== "mouse") return;
           const rect = event.currentTarget.getBoundingClientRect();
@@ -93,54 +93,41 @@ export default function ExperienceHero({ onContactClick }: ExperienceHeroProps) 
         }}
         onPointerLeave={() => setPointer({ x: 0, y: 0 })}
       >
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_75%_45%,rgba(255,215,0,0.12),transparent_45%)]" />
-        <div className="pointer-events-none absolute inset-0 opacity-15" style={{ background: "repeating-linear-gradient(0deg,transparent 0 5px,#fefefe0a 6px 7px)" }} />
-        <div className="pointer-events-none absolute left-0 top-0 h-full w-full opacity-30" style={{ backgroundImage: "linear-gradient(90deg,transparent 95%,#eab30820 100%)", backgroundSize: "90px 100%" }} />
-
-        <div className="container sticky top-0 z-10 mx-auto grid min-h-screen items-center gap-8 px-5 pb-16 pt-28 lg:grid-cols-[1.03fr_0.97fr]">
-          <motion.div initial={reducedMotion ? false : { opacity: 0, y: 28 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3, duration: 0.75 }} className="relative z-10">
-            <div className="mb-8 flex items-center gap-3 text-[10px] font-bold uppercase tracking-[0.32em] text-brand-yellow">
-              <span className="h-1.5 w-1.5 rounded-full bg-brand-yellow" /> Estudio creativo & tecnológico
-            </div>
-            <h1 className="max-w-3xl text-[clamp(3.25rem,6.4vw,6.9rem)] font-black uppercase leading-[0.95] tracking-[-0.065em]">
-              Ideas que se convierten en <span className="text-brand-yellow">experiencias.</span>
-            </h1>
-            <p className="mt-8 max-w-lg text-base leading-relaxed text-white/65 md:text-lg">
-              Web, producción audiovisual, diseño y estrategia digital. Combinamos creatividad y tecnología para marcas que quieren destacarse.
-            </p>
-            <div className="mt-9 flex flex-wrap gap-3">
-              <a href="#trabajos-destacados" className="inline-flex items-center gap-3 rounded-full bg-brand-yellow px-7 py-4 text-xs font-black uppercase tracking-wider text-black transition-transform hover:-translate-y-1">Explorar proyectos <ArrowDownRight size={17} /></a>
-              <button type="button" onClick={onContactClick} className="inline-flex items-center gap-3 rounded-full border border-white/30 px-7 py-4 text-xs font-black uppercase tracking-wider text-white transition-colors hover:border-brand-yellow hover:text-brand-yellow">Hablemos de tu idea <ArrowUpRight size={17} /></button>
-            </div>
-            <p className="mt-10 font-mono text-[10px] uppercase tracking-[0.16em] text-white/40">Diseño • Tecnología • Historias • Impacto</p>
-          </motion.div>
-          <div className="relative mx-auto flex min-h-[390px] w-full max-w-[610px] items-center justify-center md:min-h-[570px]">
-            <div className="pointer-events-none absolute inset-[10%] rounded-full bg-brand-yellow/10 blur-[90px]" />
-            <motion.div style={reducedMotion ? undefined : { x: pointer.x * -22, y: pointer.y * -18 }} transition={{ type: "spring", damping: 22, stiffness: 90 }} className="absolute left-0 top-8 z-20 rounded-xl border border-white/15 bg-black/60 px-4 py-3 font-mono text-[10px] leading-relaxed tracking-widest text-white/65 backdrop-blur-md">
-              <span className="text-brand-yellow">D8/SYSTEM</span><br />CREATIVITY: ONLINE
-            </motion.div>
-            <motion.div
-              animate={reducedMotion ? undefined : { y: [-9, 9, -9] }}
-              transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
-              style={reducedMotion ? undefined : { rotateY: pointer.x * 9, rotateX: pointer.y * -7 }}
-              className="relative z-10 w-[84%] max-w-[490px] [transform-style:preserve-3d]"
-            >
-              {!reducedMotion && !videoUnavailable ? (
-                <video ref={heroVideoRef} muted playsInline preload="auto" poster="/d8-hero-poster.webp" onError={() => setVideoUnavailable(true)} aria-label="Mascota D8 Creative animada" className="h-auto w-full rounded-3xl object-contain drop-shadow-[0_28px_40px_rgba(0,0,0,0.65)]">
-                  <source src="/d8-hero-loop.mp4" type="video/mp4" />
-                </video>
-              ) : (
-                <img src="/d8-mascot.webp" onError={(e) => { e.currentTarget.src = "/avatard8.png"; }} alt="Mascota voxel D8 Creative" fetchPriority="high" className="h-auto w-full object-contain drop-shadow-[0_28px_40px_rgba(0,0,0,0.65)]" />
-              )}
-            </motion.div>
-            <div className="absolute bottom-6 right-0 z-20 max-w-[210px] rounded-2xl border border-brand-yellow/25 bg-black/65 p-4 backdrop-blur-xl">
-              <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-brand-yellow">D8 / PLAY</span>
-              <p className="mt-2 text-sm font-semibold">Lo diferente empieza con una idea.</p>
-              <button type="button" onClick={() => setTvOpen(true)} className="mt-3 flex items-center gap-2 text-xs text-white/70 hover:text-brand-yellow"><Play size={14} /> Activar señal</button>
-            </div>
+        <div className="sticky top-0 isolate h-screen w-full overflow-hidden">
+          {/* Escena a pantalla completa: video y tipografía son capas del mismo escenario. */}
+          <div className="pointer-events-none absolute inset-0 bg-[#090b0e]">
+            <div className="absolute inset-0 opacity-80" style={{ background: "radial-gradient(ellipse at 78% 55%,#30200f 0%,#10151f 35%,#090a0d 75%)" }} />
+            <div className="absolute inset-0 opacity-25" style={{ backgroundImage: "linear-gradient(90deg,#fbbf2413 1px,transparent 1px),linear-gradient(0deg,#fbbf2409 1px,transparent 1px)",backgroundSize:"100px 100px" }} />
+            <div className="absolute right-0 top-0 h-1/2 w-1/2 opacity-20 blur-3xl" style={{background:"radial-gradient(ellipse,#facc15,transparent 65%)"}} />
           </div>
+          <motion.div className="pointer-events-none absolute -right-[7%] bottom-0 top-0 z-[1] flex h-full w-[100%] items-center justify-end overflow-hidden md:w-[78%]"
+            style={reducedMotion ? undefined : {x:pointer.x * -16,y:pointer.y * -9}}>
+            {!reducedMotion && !videoUnavailable ? (
+              <video ref={heroVideoRef} muted playsInline preload="auto" poster="/d8-hero-poster.webp" onError={() => setVideoUnavailable(true)} aria-label="Mascota D8 Creative: el movimiento responde al desplazamiento" className="h-full w-full object-cover object-[65%_center] opacity-95 [mask-image:linear-gradient(to_right,transparent_0%,black_23%,black_100%)] md:object-center">
+                <source src="/d8-hero-loop.mp4" type="video/mp4" />
+              </video>
+            ) : (
+              <img src="/d8-mascot.webp" onError={e=>{if(!e.currentTarget.src.includes("avatard8"))e.currentTarget.src="/avatard8.png"}} alt="Mascota voxel D8 Creative" className="h-full w-full object-contain object-right opacity-90 [mask-image:linear-gradient(to_right,transparent,black_35%)]" />
+            )}
+          </motion.div>
+          {/* Degradado editorial para asegurar que el texto sea legible sobre la secuencia. */}
+          <div className="pointer-events-none absolute inset-0 z-[2] bg-gradient-to-r from-[#080a0d] via-[#080a0deb] to-transparent md:via-[#080a0dc0]" />
+          <div className="pointer-events-none absolute inset-0 z-[2] bg-gradient-to-t from-[#080a0dba] via-transparent to-[#080a0d44]" />
+          <div className="pointer-events-none absolute inset-0 z-[3] opacity-[0.11]" style={{background:"repeating-linear-gradient(0deg,transparent 0 4px,#ffffff21 5px 6px)"}} />
+          <div className="container relative z-10 mx-auto flex h-full items-center px-5 pb-24 pt-28 md:px-8">
+            <motion.div initial={reducedMotion ? false : {opacity:0,y:25}} animate={{opacity:1,y:0}} transition={{duration:0.8}} className="max-w-[740px]">
+              <div className="mb-7 flex items-center gap-3 font-mono text-[10px] font-bold uppercase tracking-[0.3em] text-brand-yellow"><span className="h-1.5 w-1.5 rounded-full bg-brand-yellow"/> Diseño × Tecnología × Impacto</div>
+              <h1 className="text-[clamp(3.25rem,6.9vw,7.2rem)] font-black uppercase leading-[0.92] tracking-[-0.063em]">Digital <br/>experiences <br/>that <span className="text-brand-yellow">move people.</span></h1>
+              <p className="mt-8 max-w-[480px] text-sm leading-relaxed text-white/75 md:text-lg">Creamos sitios web, contenido audiovisual, identidad y productos digitales para marcas con ideas que merecen destacarse.</p>
+              <div className="mt-8 flex flex-wrap gap-3">
+                <a href="#trabajos-destacados" className="inline-flex items-center gap-2 rounded-full bg-brand-yellow px-6 py-4 text-xs font-black uppercase text-black transition-transform hover:-translate-y-1">Ver proyectos <ArrowDownRight size={16}/></a>
+                <button onClick={onContactClick} className="inline-flex items-center gap-2 rounded-full border border-white/40 bg-black/30 px-6 py-4 text-xs font-black uppercase text-white hover:border-brand-yellow">Iniciar proyecto <ArrowUpRight size={16}/></button>
+              </div>
+            </motion.div>
+          </div>
+          <div className="pointer-events-none absolute bottom-6 left-6 z-20 flex items-center gap-3 font-mono text-[10px] uppercase tracking-widest text-white/60 md:left-10"><span className="h-px w-8 bg-brand-yellow"/> Scroll para dar vida a la escena</div>
+          <button type="button" onClick={()=>setTvOpen(true)} className="absolute bottom-6 right-6 z-20 rounded-full border border-white/25 bg-black/50 px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-brand-yellow backdrop-blur hover:border-brand-yellow"><Play size={12} className="mr-2 inline"/> Señal D8</button>
         </div>
-        <div className="absolute bottom-9 left-5 flex items-center gap-3 font-mono text-[10px] uppercase tracking-[0.2em] text-white/40 md:left-12"><span className="h-px w-10 bg-brand-yellow" /> Scroll para animar al personaje</div>
       </section>
 
       {tvOpen && (
