@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route, useLocation } from "react-router-dom";
-import Hero from "./components/Hero";
+import ExperienceHero from "./components/ExperienceHero";
+import FeaturedWorks from "./components/FeaturedWorks";
 import Services from "./components/Services";
 import VideoPortfolio from "./pages/VideoPortfolio";
 import BrandingPortfolio from "./pages/BrandingPortfolio";
@@ -19,7 +20,8 @@ function ScrollToTop() {
 function Home({ onContact }: { onContact: () => void }) {
   return (
     <main>
-      <Hero onContactClick={onContact} />
+      <ExperienceHero onContactClick={onContact} />
+      <FeaturedWorks />
       <div className="bg-brand-yellow text-brand-darker py-3 overflow-hidden -rotate-1 border-y-4 border-black relative z-20 shadow-2xl">
         <div className="whitespace-nowrap animate-marquee font-black text-xl uppercase flex gap-4">
           <span>✦ Edición de Video ✦ Desarrollo Web ✦ Growth Marketing ✦ Producción Audiovisual ✦ Estrategia Digital ✦ Edición de Video ✦ Desarrollo Web ✦ Growth Marketing</span>
