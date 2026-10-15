@@ -13,6 +13,8 @@ export default function ExperienceHero({ onContactClick }: ExperienceHeroProps) 
   const [videoUnavailable, setVideoUnavailable] = useState(false);
   const [introVideoUnavailable, setIntroVideoUnavailable] = useState(false);
   const heroVideoRef = useRef<HTMLVideoElement>(null);
+  const heroSectionRef = useRef<HTMLElement>(null);
+  const videoDurationRef = useRef(0);
 
   useEffect(() => {
     if (reducedMotion) return;
@@ -20,7 +22,52 @@ export default function ExperienceHero({ onContactClick }: ExperienceHeroProps) 
     return () => window.clearTimeout(timer);
   }, [reducedMotion]);
 
-  const skipIntro = () => { setBooting(false); heroVideoRef.current?.play().catch(() => {}); };
+  // El timeline del personaje se controla por scroll, no por autoplay.
+  useEffect(() => {
+    if (reducedMotion || videoUnavailable) return;
+    const video = heroVideoRef.current;
+    const section = heroSectionRef.current;
+    if (!video || !section) return;
+    let frame = 0;
+    let lastTime = -1;
+    let targetTime = 0;
+    let running = true;
+    const updateTarget = () => {
+      const travel = Math.max(1, section.offsetHeight - window.innerHeight);
+      const distance = Math.max(0, -section.getBoundingClientRect().top);
+      const progress = Math.min(1, distance / travel);
+      targetTime = progress * Math.max(0, videoDurationRef.current - 0.08);
+    };
+    const tick = () => {
+      if (!running) return;
+      const duration = videoDurationRef.current;
+      if (duration > 0 && video.readyState >= 1) {
+        const difference = targetTime - video.currentTime;
+        // Evita saltos innecesarios y no disputa seeks en curso.
+        if (!video.seeking && Math.abs(difference) > 0.045 && Math.abs(targetTime - lastTime) > 0.025) {
+          const next = video.currentTime + difference * 0.32;
+          try { video.currentTime = Math.min(duration - 0.04, Math.max(0, next)); lastTime = targetTime; } catch { /* metadata todavía no lista */ }
+        }
+      }
+      frame = window.requestAnimationFrame(tick);
+    };
+    const onMetadata = () => { videoDurationRef.current = video.duration || 0; video.pause(); updateTarget(); };
+    video.addEventListener("loadedmetadata", onMetadata);
+    if (video.readyState >= 1) onMetadata();
+    window.addEventListener("scroll", updateTarget, { passive: true });
+    window.addEventListener("resize", updateTarget);
+    updateTarget();
+    frame = window.requestAnimationFrame(tick);
+    return () => {
+      running = false;
+      window.cancelAnimationFrame(frame);
+      window.removeEventListener("scroll", updateTarget);
+      window.removeEventListener("resize", updateTarget);
+      video.removeEventListener("loadedmetadata", onMetadata);
+    };
+  }, [reducedMotion, videoUnavailable]);
+
+  const skipIntro = () => setBooting(false);
 
   return (
     <>
@@ -38,7 +85,8 @@ export default function ExperienceHero({ onContactClick }: ExperienceHeroProps) 
       )}
 
       <section
-        className="relative isolate flex min-h-[790px] items-center overflow-hidden border-b border-white/10 bg-[#0b0b0e] pb-28 pt-32 text-white md:min-h-[860px]"
+        ref={heroSectionRef}
+        className="relative isolate min-h-[165vh] border-b border-white/10 bg-[#0b0b0e] text-white"
         onPointerMove={(event) => {
           if (reducedMotion || event.pointerType !== "mouse") return;
           const rect = event.currentTarget.getBoundingClientRect();
@@ -50,7 +98,7 @@ export default function ExperienceHero({ onContactClick }: ExperienceHeroProps) 
         <div className="pointer-events-none absolute inset-0 opacity-15" style={{ background: "repeating-linear-gradient(0deg,transparent 0 5px,#fefefe0a 6px 7px)" }} />
         <div className="pointer-events-none absolute left-0 top-0 h-full w-full opacity-30" style={{ backgroundImage: "linear-gradient(90deg,transparent 95%,#eab30820 100%)", backgroundSize: "90px 100%" }} />
 
-        <div className="container relative z-10 mx-auto grid items-center gap-12 px-5 lg:grid-cols-[1.03fr_0.97fr]">
+        <div className="container sticky top-0 z-10 mx-auto grid min-h-screen items-center gap-8 px-5 pb-16 pt-28 lg:grid-cols-[1.03fr_0.97fr]">
           <motion.div initial={reducedMotion ? false : { opacity: 0, y: 28 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3, duration: 0.75 }} className="relative z-10">
             <div className="mb-8 flex items-center gap-3 text-[10px] font-bold uppercase tracking-[0.32em] text-brand-yellow">
               <span className="h-1.5 w-1.5 rounded-full bg-brand-yellow" /> Estudio creativo & tecnológico
@@ -79,7 +127,7 @@ export default function ExperienceHero({ onContactClick }: ExperienceHeroProps) 
               className="relative z-10 w-[84%] max-w-[490px] [transform-style:preserve-3d]"
             >
               {!reducedMotion && !videoUnavailable ? (
-                <video ref={heroVideoRef} autoPlay muted loop playsInline preload="metadata" poster="/d8-hero-poster.webp" onError={() => setVideoUnavailable(true)} aria-label="Mascota D8 Creative animada" className="h-auto w-full rounded-3xl object-contain drop-shadow-[0_28px_40px_rgba(0,0,0,0.65)]">
+                <video ref={heroVideoRef} muted playsInline preload="auto" poster="/d8-hero-poster.webp" onError={() => setVideoUnavailable(true)} aria-label="Mascota D8 Creative animada" className="h-auto w-full rounded-3xl object-contain drop-shadow-[0_28px_40px_rgba(0,0,0,0.65)]">
                   <source src="/d8-hero-loop.mp4" type="video/mp4" />
                 </video>
               ) : (
@@ -93,7 +141,7 @@ export default function ExperienceHero({ onContactClick }: ExperienceHeroProps) 
             </div>
           </div>
         </div>
-        <div className="absolute bottom-9 left-5 flex items-center gap-3 font-mono text-[10px] uppercase tracking-[0.2em] text-white/40 md:left-12"><span className="h-px w-10 bg-brand-yellow" /> Deslizá para descubrir</div>
+        <div className="absolute bottom-9 left-5 flex items-center gap-3 font-mono text-[10px] uppercase tracking-[0.2em] text-white/40 md:left-12"><span className="h-px w-10 bg-brand-yellow" /> Scroll para animar al personaje</div>
       </section>
 
       {tvOpen && (
