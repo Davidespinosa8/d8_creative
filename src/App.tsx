@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route, useLocation } from "react-router-dom";
-import Hero from "./components/Hero";
+import ExperienceHero from "./components/ExperienceHero";
+import FeaturedWorks from "./components/FeaturedWorks";
+import { StorySequence, CreativeLab, BehindD8 } from "./components/ExperienceSections";
 import Services from "./components/Services";
 import VideoPortfolio from "./pages/VideoPortfolio";
 import BrandingPortfolio from "./pages/BrandingPortfolio";
@@ -19,7 +21,9 @@ function ScrollToTop() {
 function Home({ onContact }: { onContact: () => void }) {
   return (
     <main>
-      <Hero onContactClick={onContact} />
+      <ExperienceHero onContactClick={onContact} />
+      <StorySequence />
+      <FeaturedWorks />
       <div className="bg-brand-yellow text-brand-darker py-3 overflow-hidden -rotate-1 border-y-4 border-black relative z-20 shadow-2xl">
         <div className="whitespace-nowrap animate-marquee font-black text-xl uppercase flex gap-4">
           <span>✦ Edición de Video ✦ Desarrollo Web ✦ Growth Marketing ✦ Producción Audiovisual ✦ Estrategia Digital ✦ Edición de Video ✦ Desarrollo Web ✦ Growth Marketing</span>
@@ -27,6 +31,9 @@ function Home({ onContact }: { onContact: () => void }) {
         </div>
       </div>
       <Services />
+      <CreativeLab />
+      <BehindD8 />
+      <section className="border-t border-white/10 bg-[#0b0b0d] px-5 py-28 text-center text-white"><p className="font-mono text-xs uppercase tracking-[0.25em] text-brand-yellow">07 / Empecemos</p><h2 className="mx-auto mt-5 max-w-4xl text-4xl font-black uppercase md:text-7xl">¿Creamos algo <span className="text-brand-yellow">extraordinario?</span></h2><p className="mx-auto mt-6 max-w-xl text-white/60">Contanos qué querés construir. Lo convertimos en un plan real.</p><button onClick={onContact} className="mt-8 rounded-full bg-brand-yellow px-10 py-4 text-sm font-black uppercase tracking-widest text-black transition-transform hover:-translate-y-1">Hablemos de tu proyecto ↗</button></section>
     </main>
   );
 }
