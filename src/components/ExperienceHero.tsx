@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { ArrowDownRight, ArrowUpRight, Play, X } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -11,28 +11,30 @@ export default function ExperienceHero({ onContactClick }: ExperienceHeroProps) 
   const [pointer, setPointer] = useState({ x: 0, y: 0 });
   const [tvOpen, setTvOpen] = useState(false);
   const [videoUnavailable, setVideoUnavailable] = useState(false);
+  const [introVideoUnavailable, setIntroVideoUnavailable] = useState(false);
+  const heroVideoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
     if (reducedMotion) return;
-    const timer = window.setTimeout(() => setBooting(false), 2200);
+    const timer = window.setTimeout(() => setBooting(false), 4800);
     return () => window.clearTimeout(timer);
   }, [reducedMotion]);
 
-  const skipIntro = () => setBooting(false);
+  const skipIntro = () => { setBooting(false); heroVideoRef.current?.play().catch(() => {}); };
 
   return (
     <>
       {!reducedMotion && booting && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#050505] px-5 text-white" role="dialog" aria-modal="true" aria-label="Presentación D8 Creative">
-          <div className="absolute inset-0 pointer-events-none opacity-20" style={{ background: "repeating-linear-gradient(0deg,transparent 0 3px,#ffffff22 4px 5px)" }} />
-          <div className="relative w-full max-w-xl rounded-[2.5rem] border-[12px] border-[#242427] bg-black px-7 py-16 text-center shadow-[0_0_80px_#facc1530]">
-            <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }} className="font-mono text-[10px] tracking-[0.35em] text-brand-yellow">D8_CREATIVE.EXE</motion.p>
-            <motion.h2 initial={{ scaleY: 0.03, opacity: 0 }} animate={{ scaleY: 1, opacity: 1 }} transition={{ duration: 0.6 }} className="mt-8 text-6xl font-black tracking-tighter md:text-8xl">D<span className="text-brand-yellow">8</span></motion.h2>
-            <p className="mt-4 font-mono text-xs tracking-[0.28em] text-white/60">INICIANDO EXPERIENCIA...</p>
-            <motion.div className="mx-auto mt-7 h-1 max-w-xs origin-left bg-brand-yellow" initial={{ scaleX: 0 }} animate={{ scaleX: 1 }} transition={{ duration: 1.7, ease: "easeInOut" }} />
+        <motion.div initial={{opacity:1}} exit={{opacity:0}} className="fixed inset-0 z-[100] flex items-center justify-center overflow-hidden bg-[#050505] px-5 text-white" role="dialog" aria-modal="true" aria-label="Presentación D8 Creative">
+          <div className="pointer-events-none absolute inset-0 opacity-25" style={{background:"repeating-linear-gradient(0deg,transparent 0 3px,#ffffff22 4px 5px)"}}/>
+          <div className="relative w-full max-w-[730px] overflow-hidden rounded-[2rem] border-[10px] border-[#252525] bg-black shadow-[0_0_100px_#facc1530]">
+            {!introVideoUnavailable ? <video src="/d8-intro.mp4" muted autoPlay playsInline preload="metadata" onError={()=>setIntroVideoUnavailable(true)} onEnded={skipIntro} aria-label="Presentación cinematográfica de la mascota D8" className="aspect-video w-full object-cover"/> : <div className="flex aspect-video flex-col items-center justify-center"><span className="font-mono text-xs tracking-[0.3em] text-brand-yellow">D8 CREATIVE / BOOTING</span><p className="mt-5 text-7xl font-black">D<span className="text-brand-yellow">8</span></p></div>}
+            <div className="absolute bottom-0 left-0 right-0 flex justify-between gap-3 bg-black/65 px-5 py-3 font-mono text-[10px] uppercase tracking-widest text-white/70 backdrop-blur">
+              <span>WELCOME TO D8 / SIGNAL 01</span><span className="text-brand-yellow">REC ●</span>
+            </div>
           </div>
-          <button type="button" onClick={skipIntro} className="absolute bottom-12 right-6 flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-white/75 hover:text-brand-yellow">Omitir intro <X size={16} /></button>
-        </div>
+          <button type="button" onClick={skipIntro} className="absolute bottom-7 right-6 rounded-full border border-white/30 bg-black/65 px-5 py-3 text-xs font-bold uppercase tracking-wider text-white hover:border-brand-yellow hover:text-brand-yellow">Omitir intro <X size={15} className="ml-2 inline"/></button>
+        </motion.div>
       )}
 
       <section
@@ -77,11 +79,11 @@ export default function ExperienceHero({ onContactClick }: ExperienceHeroProps) 
               className="relative z-10 w-[84%] max-w-[490px] [transform-style:preserve-3d]"
             >
               {!reducedMotion && !videoUnavailable ? (
-                <video autoPlay muted loop playsInline preload="metadata" poster="/d8-hero-poster.webp" onError={() => setVideoUnavailable(true)} aria-label="Mascota D8 Creative animada" className="h-auto w-full rounded-3xl object-contain drop-shadow-[0_28px_40px_rgba(0,0,0,0.65)]">
+                <video ref={heroVideoRef} autoPlay muted loop playsInline preload="metadata" poster="/d8-hero-poster.webp" onError={() => setVideoUnavailable(true)} aria-label="Mascota D8 Creative animada" className="h-auto w-full rounded-3xl object-contain drop-shadow-[0_28px_40px_rgba(0,0,0,0.65)]">
                   <source src="/d8-hero-loop.mp4" type="video/mp4" />
                 </video>
               ) : (
-                <img src="/avatard8.png" alt="Mascota pixel art D8 Creative" fetchPriority="high" className="h-auto w-full object-contain drop-shadow-[0_28px_40px_rgba(0,0,0,0.65)]" />
+                <img src="/d8-mascot.webp" onError={(e) => { e.currentTarget.src = "/avatard8.png"; }} alt="Mascota voxel D8 Creative" fetchPriority="high" className="h-auto w-full object-contain drop-shadow-[0_28px_40px_rgba(0,0,0,0.65)]" />
               )}
             </motion.div>
             <div className="absolute bottom-6 right-0 z-20 max-w-[210px] rounded-2xl border border-brand-yellow/25 bg-black/65 p-4 backdrop-blur-xl">
