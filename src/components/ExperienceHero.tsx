@@ -29,7 +29,6 @@ export default function ExperienceHero({ onContactClick }: ExperienceHeroProps) 
     const section = heroSectionRef.current;
     if (!video || !section) return;
     let frame = 0;
-    let lastTime = -1;
     let targetTime = 0;
     let running = true;
     const updateTarget = () => {
@@ -44,9 +43,9 @@ export default function ExperienceHero({ onContactClick }: ExperienceHeroProps) 
       if (duration > 0 && video.readyState >= 1) {
         const difference = targetTime - video.currentTime;
         // Evita saltos innecesarios y no disputa seeks en curso.
-        if (!video.seeking && Math.abs(difference) > 0.045 && Math.abs(targetTime - lastTime) > 0.025) {
+        if (!video.seeking && Math.abs(difference) > 0.045) {
           const next = video.currentTime + difference * 0.32;
-          try { video.currentTime = Math.min(duration - 0.04, Math.max(0, next)); lastTime = targetTime; } catch { /* metadata todavía no lista */ }
+          try { video.currentTime = Math.min(duration - 0.04, Math.max(0, next)); } catch { /* metadata todavía no lista */ }
         }
       }
       frame = window.requestAnimationFrame(tick);
