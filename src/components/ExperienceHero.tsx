@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { ArrowDownRight, ArrowUpRight, Play, X } from "lucide-react";
 import { Link } from "react-router-dom";
+import ScrollMascot from "./ScrollMascot";
 
 type ExperienceHeroProps = { onContactClick: () => void };
 
@@ -10,61 +11,14 @@ export default function ExperienceHero({ onContactClick }: ExperienceHeroProps) 
   const [booting, setBooting] = useState(true);
   const [pointer, setPointer] = useState({ x: 0, y: 0 });
   const [tvOpen, setTvOpen] = useState(false);
-  const [videoUnavailable, setVideoUnavailable] = useState(false);
   const [introVideoUnavailable, setIntroVideoUnavailable] = useState(false);
-  const heroVideoRef = useRef<HTMLVideoElement>(null);
   const heroSectionRef = useRef<HTMLElement>(null);
-  const videoDurationRef = useRef(0);
 
   useEffect(() => {
     if (reducedMotion) return;
     const timer = window.setTimeout(() => setBooting(false), 4800);
     return () => window.clearTimeout(timer);
   }, [reducedMotion]);
-
-  // El timeline del personaje se controla por scroll, no por autoplay.
-  useEffect(() => {
-    if (reducedMotion || videoUnavailable) return;
-    const video = heroVideoRef.current;
-    const section = heroSectionRef.current;
-    if (!video || !section) return;
-    let frame = 0;
-    let targetTime = 0;
-    let running = true;
-    const updateTarget = () => {
-      const travel = Math.max(1, section.offsetHeight - window.innerHeight);
-      const distance = Math.max(0, -section.getBoundingClientRect().top);
-      const progress = Math.min(1, distance / travel);
-      targetTime = progress * Math.max(0, videoDurationRef.current - 0.08);
-    };
-    const tick = () => {
-      if (!running) return;
-      const duration = videoDurationRef.current;
-      if (duration > 0 && video.readyState >= 1) {
-        const difference = targetTime - video.currentTime;
-        // Evita saltos innecesarios y no disputa seeks en curso.
-        if (!video.seeking && Math.abs(difference) > 0.045) {
-          const next = video.currentTime + difference * 0.32;
-          try { video.currentTime = Math.min(duration - 0.04, Math.max(0, next)); } catch { /* metadata todavía no lista */ }
-        }
-      }
-      frame = window.requestAnimationFrame(tick);
-    };
-    const onMetadata = () => { videoDurationRef.current = video.duration || 0; video.pause(); updateTarget(); };
-    video.addEventListener("loadedmetadata", onMetadata);
-    if (video.readyState >= 1) onMetadata();
-    window.addEventListener("scroll", updateTarget, { passive: true });
-    window.addEventListener("resize", updateTarget);
-    updateTarget();
-    frame = window.requestAnimationFrame(tick);
-    return () => {
-      running = false;
-      window.cancelAnimationFrame(frame);
-      window.removeEventListener("scroll", updateTarget);
-      window.removeEventListener("resize", updateTarget);
-      video.removeEventListener("loadedmetadata", onMetadata);
-    };
-  }, [reducedMotion, videoUnavailable]);
 
   const skipIntro = () => setBooting(false);
 
@@ -84,6 +38,7 @@ export default function ExperienceHero({ onContactClick }: ExperienceHeroProps) 
       )}
 
       <section
+        id="d8-hero-scroll-scene"
         ref={heroSectionRef}
         className="relative isolate h-[230vh] border-b border-white/10 bg-[#080a0d] text-white"
         onPointerMove={(event) => {
@@ -102,13 +57,7 @@ export default function ExperienceHero({ onContactClick }: ExperienceHeroProps) 
           </div>
           <motion.div className="pointer-events-none absolute -right-[7%] bottom-0 top-0 z-[1] flex h-full w-[100%] items-center justify-end overflow-hidden md:w-[78%]"
             style={reducedMotion ? undefined : {x:pointer.x * -16,y:pointer.y * -9}}>
-            {!reducedMotion && !videoUnavailable ? (
-              <video ref={heroVideoRef} muted playsInline preload="auto" poster="/d8-hero-poster.webp" onError={() => setVideoUnavailable(true)} aria-label="Mascota D8 Creative: el movimiento responde al desplazamiento" className="h-full w-full object-cover object-[65%_center] opacity-95 [mask-image:linear-gradient(to_right,transparent_0%,black_23%,black_100%)] md:object-center">
-                <source src="/d8-hero-loop.mp4" type="video/mp4" />
-              </video>
-            ) : (
-              <img src="/d8-mascot.webp" onError={e=>{if(!e.currentTarget.src.includes("avatard8"))e.currentTarget.src="/avatard8.png"}} alt="Mascota voxel D8 Creative" className="h-full w-full object-contain object-right opacity-90 [mask-image:linear-gradient(to_right,transparent,black_35%)]" />
-            )}
+            <ScrollMascot />
           </motion.div>
           {/* Degradado editorial para asegurar que el texto sea legible sobre la secuencia. */}
           <div className="pointer-events-none absolute inset-0 z-[2] bg-gradient-to-r from-[#080a0d] via-[#080a0deb] to-transparent md:via-[#080a0dc0]" />
