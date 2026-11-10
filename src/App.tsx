@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route, useLocation } from "react-router-dom";
 import ExperienceHero from "./components/ExperienceHero";
 import FeaturedWorks from "./components/FeaturedWorks";
-import { StorySequence, CreativeLab, BehindD8 } from "./components/ExperienceSections";
+import { CreativeLab, BehindD8 } from "./components/ExperienceSections";
 import Services from "./components/Services";
 import VideoPortfolio from "./pages/VideoPortfolio";
 import BrandingPortfolio from "./pages/BrandingPortfolio";
@@ -22,7 +22,6 @@ function Home({ onContact }: { onContact: () => void }) {
   return (
     <main>
       <ExperienceHero onContactClick={onContact} />
-      <StorySequence />
       <FeaturedWorks />
       <div className="bg-brand-yellow text-brand-darker py-3 overflow-hidden -rotate-1 border-y-4 border-black relative z-20 shadow-2xl">
         <div className="whitespace-nowrap animate-marquee font-black text-xl uppercase flex gap-4">
