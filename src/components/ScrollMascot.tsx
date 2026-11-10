@@ -143,7 +143,7 @@ export default function ScrollMascot({ gazePosition, gazeActive }: { gazePositio
       {gazeAssetsReady && !reducedMotion && (["left", "center", "right"] as const).map(direction => (
         <motion.img
           key={direction}
-          src={`/d8_look_\${direction}.webp`}
+          src={`/d8_look_${direction}.webp`}
           alt=""
           aria-hidden="true"
           draggable={false}
