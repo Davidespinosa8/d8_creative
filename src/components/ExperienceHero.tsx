@@ -9,7 +9,8 @@ type ExperienceHeroProps = { onContactClick: () => void };
 export default function ExperienceHero({ onContactClick }: ExperienceHeroProps) {
   const reducedMotion = useReducedMotion();
   const [booting, setBooting] = useState(true);
-  const [pointer, setPointer] = useState({ x: 0, y: 0 });
+  const [gaze, setGaze] = useState<"left" | "center" | "right">("center");
+  const [gazeActive, setGazeActive] = useState(false);
   const [tvOpen, setTvOpen] = useState(false);
   const [introVideoUnavailable, setIntroVideoUnavailable] = useState(false);
   const heroSectionRef = useRef<HTMLElement>(null);
@@ -42,11 +43,21 @@ export default function ExperienceHero({ onContactClick }: ExperienceHeroProps) 
         ref={heroSectionRef}
         className="relative isolate h-[145svh] min-h-[700px] border-b border-white/10 bg-[#080a0d] text-white"
         onPointerMove={(event) => {
-          if (reducedMotion || event.pointerType !== "mouse") return;
+          if (reducedMotion || (event.pointerType === "touch" && event.buttons === 0)) return;
           const rect = event.currentTarget.getBoundingClientRect();
-          setPointer({ x: (event.clientX - rect.left) / rect.width - 0.5, y: (event.clientY - rect.top) / rect.height - 0.5 });
+          const normalized = (event.clientX - rect.left) / Math.max(1, rect.width);
+          setGaze(normalized < 0.37 ? "left" : normalized > 0.63 ? "right" : "center");
+          setGazeActive(true);
         }}
-        onPointerLeave={() => setPointer({ x: 0, y: 0 })}
+        onPointerDown={(event) => {
+          if (reducedMotion || event.pointerType !== "touch") return;
+          const rect = event.currentTarget.getBoundingClientRect();
+          const normalized = (event.clientX - rect.left) / Math.max(1, rect.width);
+          setGaze(normalized < 0.37 ? "left" : normalized > 0.63 ? "right" : "center");
+          setGazeActive(true);
+        }}
+        onPointerLeave={() => { setGaze("center"); setGazeActive(false); }}
+        onPointerCancel={() => setGazeActive(false)}
       >
         <div className="sticky top-0 isolate h-svh w-full overflow-hidden">
           {/* Hero interactivo: secuencia WebP alpha con parallax por mouse, sin reproducción de video. */}
@@ -55,20 +66,9 @@ export default function ExperienceHero({ onContactClick }: ExperienceHeroProps) 
             <div className="absolute inset-0 opacity-25" style={{ backgroundImage: "linear-gradient(90deg,#fbbf2413 1px,transparent 1px),linear-gradient(0deg,#fbbf2409 1px,transparent 1px)",backgroundSize:"100px 100px" }} />
             <div className="absolute right-0 top-0 h-1/2 w-1/2 opacity-20 blur-3xl" style={{background:"radial-gradient(ellipse,#facc15,transparent 65%)"}} />
           </div>
-          <motion.div
-            className="pointer-events-none absolute -right-[7%] bottom-0 top-0 z-[1] flex h-full w-full items-center justify-end overflow-hidden md:w-[78%]"
-            style={{ perspective: 1100 }}
-            animate={reducedMotion ? undefined : {
-              x: pointer.x * -85,
-              y: pointer.y * -38,
-              rotateY: pointer.x * -14,
-              rotateX: pointer.y * 5,
-              scale: 1 + Math.abs(pointer.x) * 0.035,
-            }}
-            transition={{ type: "spring", stiffness: 75, damping: 18, mass: 0.75 }}
-          >
-            <ScrollMascot />
-          </motion.div>
+          <div className="pointer-events-none absolute -right-[7%] bottom-0 top-0 z-[1] flex h-full w-full items-center justify-end overflow-hidden md:w-[78%]">
+            <ScrollMascot gaze={gaze} gazeActive={gazeActive} />
+          </div>
           {/* Degradado editorial para asegurar que el texto sea legible sobre la secuencia. */}
           <div className="pointer-events-none absolute inset-0 z-[2] bg-gradient-to-r from-[#080a0d] via-[#080a0deb] to-transparent md:via-[#080a0dc0]" />
           <div className="pointer-events-none absolute inset-0 z-[2] bg-gradient-to-t from-[#080a0dba] via-transparent to-[#080a0d44]" />
@@ -84,7 +84,7 @@ export default function ExperienceHero({ onContactClick }: ExperienceHeroProps) 
               </div>
             </motion.div>
           </div>
-          <div className="pointer-events-none absolute bottom-4 left-1/2 z-20 hidden -translate-x-1/2 items-center gap-2 rounded-full border border-white/15 bg-[#080a0d]/85 px-4 py-2 font-mono text-[9px] uppercase tracking-[0.14em] text-white/65 shadow-lg backdrop-blur sm:flex"><span className="h-px w-5 bg-brand-yellow"/> Scroll: mové la escena <ArrowDownRight size={12} className="text-brand-yellow"/></div>
+          <div className="pointer-events-none absolute bottom-4 left-1/2 z-20 hidden -translate-x-1/2 items-center gap-2 rounded-full border border-white/15 bg-[#080a0d]/85 px-4 py-2 font-mono text-[9px] uppercase tracking-[0.14em] text-white/65 shadow-lg backdrop-blur sm:flex"><span className="h-px w-5 bg-brand-yellow"/> Mouse: mirada · scroll: animación <ArrowDownRight size={12} className="text-brand-yellow"/></div>
           <button type="button" onClick={()=>setTvOpen(true)} className="absolute bottom-4 right-4 z-20 rounded-full border border-white/25 bg-black/75 px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-brand-yellow backdrop-blur hover:border-brand-yellow md:bottom-5 md:right-6"><Play size={12} className="mr-2 inline"/> Señal D8</button>
         </div>
       </section>
