@@ -1,171 +1,170 @@
 import { useEffect, useRef, useState } from "react";
-import { motion, useReducedMotion } from "framer-motion";
+import { useReducedMotion } from "framer-motion";
 
 /**
- * Real alpha WebP frame sequences, driven by the position of the page scroll.
- * Four 8×8 atlases, 240 sequential source frames, no playing video.
+ * Independent input channels:
+ * - scroll controls 240-frame narrative action
+ * - mouse / touch selects one of 15 consistent turn-around poses
+ * The character is drawn on one canvas, with no double-image crossfades.
  */
-const TOTAL_FRAMES = 240;
-const FRAMES_PER_SHEET = 64;
-const COLUMNS = 8;
-const FRAME_W = 225;
-const FRAME_H = 385;
-const SHEET_PATHS = [1, 2, 3, 4].map((n) => `/d8-frames-${n}.webp`);
+const SCROLL_FRAMES = 240;
+const SHEET_SIZE = 64;
+const SHEET_COLS = 8;
+const SOURCE_W = 225;
+const SOURCE_H = 385;
+const VIEW_W = 480;
+const VIEW_H = 760;
+const TURN_COUNT = 15;
 
 type GazePosition = { x: number; y: number };
+type Props = { gazePosition: GazePosition; gazeActive: boolean };
 
-export default function ScrollMascot({ gazePosition, gazeActive }: { gazePosition: GazePosition; gazeActive: boolean }) {
+export default function ScrollMascot({ gazePosition, gazeActive }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [failed, setFailed] = useState(false);
+  const positionRef = useRef(gazePosition);
+  const activeRef = useRef(gazeActive);
   const [ready, setReady] = useState(false);
+  const [failed, setFailed] = useState(false);
   const reducedMotion = useReducedMotion();
-  const [gazeAssetsReady, setGazeAssetsReady] = useState(false);
-  const [scrollActive, setScrollActive] = useState(false);
 
-  useEffect(() => {
-    let active = true;
-    Promise.all(["left", "center", "right"].map(direction => new Promise<void>((resolve, reject) => {
-      const img = new Image();
-      img.onload = () => resolve();
-      img.onerror = () => reject(new Error("gaze image unavailable"));
-      img.src = `/d8_look_${direction}.webp`;
-    }))).then(() => { if (active) setGazeAssetsReady(true); }).catch(() => {});
-    return () => { active = false; };
-  }, []);
+  useEffect(() => { positionRef.current = gazePosition; }, [gazePosition]);
+  useEffect(() => { activeRef.current = gazeActive; }, [gazeActive]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
     const section = document.getElementById("d8-hero-scroll-scene");
-    const context = canvas?.getContext("2d", { alpha: true });
-    if (!canvas || !context || !section) return;
+    const ctx = canvas?.getContext("2d", { alpha: true });
+    if (!canvas || !ctx || !section) return;
 
-    const images: HTMLImageElement[] = [];
-    let cancelled = false;
-    let rafId = 0;
-    let currentFrame = 0;
-    let targetFrame = 0;
-    let lastFrame = -1;
-    let initialized = 0;
-    let loaded = 0;
+    let disposed = false;
+    let raf = 0;
+    let lastWheelAt = -10000;
+    let scrollTarget = 0;
+    let currentScroll = 0;
+    let currentTurn = (TURN_COUNT - 1) / 2;
+    let lastDrawn = "";
+    let scrollLoaded = 0;
+    let rotationLoaded = 0;
+    let rotationFailed = false;
+    const sheets: HTMLImageElement[] = [];
+    const rotations: HTMLImageElement[] = [];
 
-    const render = (index: number) => {
-      if (cancelled) return;
-      const frame = Math.max(0, Math.min(TOTAL_FRAMES - 1, index));
-      const sheet = images[Math.floor(frame / FRAMES_PER_SHEET)];
-      if (!sheet?.complete || sheet.naturalWidth === 0) return;
-      const offset = frame % FRAMES_PER_SHEET;
-      const x = (offset % COLUMNS) * FRAME_W;
-      const y = Math.floor(offset / COLUMNS) * FRAME_H;
-      context.clearRect(0, 0, FRAME_W, FRAME_H);
-      context.imageSmoothingEnabled = true;
-      context.imageSmoothingQuality = "high";
-      context.drawImage(sheet, x, y, FRAME_W, FRAME_H, 0, 0, FRAME_W, FRAME_H);
-    };
-    let releaseScroll: number | undefined;
-    const updateProgress = () => {
+    canvas.width = VIEW_W;
+    canvas.height = VIEW_H;
+
+    const onScroll = () => {
       const rect = section.getBoundingClientRect();
-      const scrollable = Math.max(1, rect.height - window.innerHeight);
-      const progress = Math.max(0, Math.min(1, -rect.top / scrollable));
-      targetFrame = reducedMotion ? 0 : progress * (TOTAL_FRAMES - 1);
-      if (!reducedMotion) {
-        setScrollActive(true);
-        window.clearTimeout(releaseScroll);
-        releaseScroll = window.setTimeout(() => setScrollActive(false), 280);
-      }
+      const maxDistance = Math.max(1, rect.height - window.innerHeight);
+      const progress = Math.max(0, Math.min(1, -rect.top / maxDistance));
+      scrollTarget = reducedMotion ? 0 : progress * (SCROLL_FRAMES - 1);
+      lastWheelAt = performance.now();
     };
+
+    const drawScroll = (index: number) => {
+      const clamped = Math.min(SCROLL_FRAMES - 1, Math.max(0, index));
+      const sheet = sheets[Math.floor(clamped / SHEET_SIZE)];
+      if (!sheet?.complete || !sheet.naturalWidth) return false;
+      const position = clamped % SHEET_SIZE;
+      const sx = (position % SHEET_COLS) * SOURCE_W;
+      const sy = Math.floor(position / SHEET_COLS) * SOURCE_H;
+      ctx.clearRect(0, 0, VIEW_W, VIEW_H);
+      ctx.drawImage(sheet, sx, sy, SOURCE_W, SOURCE_H, 0, 0, VIEW_W, VIEW_H);
+      return true;
+    };
+
+    const drawRotation = (index: number) => {
+      const img = rotations[index];
+      if (!img?.complete || !img.naturalWidth) return false;
+      ctx.clearRect(0, 0, VIEW_W, VIEW_H);
+      ctx.drawImage(img, 0, 0, VIEW_W, VIEW_H);
+      return true;
+    };
+
     const tick = () => {
-      if (cancelled) return;
-      // Smoothing is proportional to frame-distance and works in both directions.
-      currentFrame += (targetFrame - currentFrame) * 0.18;
-      if (Math.abs(currentFrame - targetFrame) < 0.08) currentFrame = targetFrame;
-      const nextFrame = Math.round(currentFrame);
-      if (nextFrame !== lastFrame) {
-        render(nextFrame);
-        lastFrame = nextFrame;
+      if (disposed) return;
+      const now = performance.now();
+      const scrolling = !reducedMotion && now - lastWheelAt < 350;
+      const canTurn = !reducedMotion && !rotationFailed && rotationLoaded === TURN_COUNT;
+      const targetTurn = activeRef.current
+        ? ((Math.max(-1, Math.min(1, positionRef.current.x)) + 1) / 2) * (TURN_COUNT - 1)
+        : (TURN_COUNT - 1) / 2;
+      // A stable ease-in/out motion, equally smooth returning toward the center.
+      currentTurn += (targetTurn - currentTurn) * 0.11;
+      currentScroll += (scrollTarget - currentScroll) * 0.17;
+
+      // Mouse overrides the scroll pose while stationary; wheel temporarily takes precedence.
+      const showTurn = canTurn && !scrolling;
+      const frame = showTurn ? Math.round(currentTurn) : Math.round(currentScroll);
+      const id = (showTurn ? "turn-" : "scroll-") + frame;
+      if (id !== lastDrawn) {
+        const displayed = showTurn ? drawRotation(frame) : drawScroll(frame);
+        if (displayed) {
+          lastDrawn = id;
+          setReady(previous => previous || true);
+        }
       }
-      rafId = window.requestAnimationFrame(tick);
+      raf = window.requestAnimationFrame(tick);
     };
-    const onReady = () => {
-      initialized += 1;
-      loaded += 1;
-      if (cancelled) return;
-      render(Math.round(currentFrame));
-      if (initialized === SHEET_PATHS.length) setReady(loaded === SHEET_PATHS.length);
-    };
-    const onFailed = () => {
-      initialized += 1;
-      if (!cancelled) {
-        setFailed(true);
-        if (initialized === SHEET_PATHS.length) setReady(false);
-      }
-    };
-    SHEET_PATHS.forEach((src) => {
+
+    const onSheetLoad = () => { scrollLoaded += 1; };
+    const onSheetError = () => { if (!disposed) setFailed(true); };
+    const onTurnLoad = () => { rotationLoaded += 1; };
+    const onTurnError = () => { rotationFailed = true; };
+
+    [1, 2, 3, 4].forEach(n => {
       const img = new Image();
-      img.onload = onReady;
-      img.onerror = onFailed;
-      images.push(img);
-      img.src = src;
+      img.onload = onSheetLoad;
+      img.onerror = onSheetError;
+      sheets.push(img);
+      img.src = `/d8-frames-${n}.webp`;
     });
-    canvas.width = FRAME_W;
-    canvas.height = FRAME_H;
-    updateProgress();
-    window.addEventListener("scroll", updateProgress, { passive: true });
-    window.addEventListener("resize", updateProgress);
-    rafId = window.requestAnimationFrame(tick);
+    for (let n = 1; n <= TURN_COUNT; n += 1) {
+      const img = new Image();
+      img.onload = onTurnLoad;
+      img.onerror = onTurnError;
+      rotations.push(img);
+      img.src = `/d8_turn_${String(n).padStart(2, "0")}.webp`;
+    }
+
+    const handleScroll = () => onScroll();
+    const handleResize = () => {
+      const rect = section.getBoundingClientRect();
+      const maxDistance = Math.max(1, rect.height - window.innerHeight);
+      scrollTarget = Math.max(0, Math.min(1, -rect.top / maxDistance)) * (SCROLL_FRAMES - 1);
+    };
+    handleResize();
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    window.addEventListener("resize", handleResize);
+    raf = window.requestAnimationFrame(tick);
+
     return () => {
-      cancelled = true;
-      window.cancelAnimationFrame(rafId);
-      window.clearTimeout(releaseScroll);
-      window.removeEventListener("scroll", updateProgress);
-      window.removeEventListener("resize", updateProgress);
-      images.forEach(img => { img.onload = null; img.onerror = null; });
+      disposed = true;
+      window.cancelAnimationFrame(raf);
+      window.removeEventListener("scroll", handleScroll);
+      window.removeEventListener("resize", handleResize);
+      [...sheets, ...rotations].forEach(img => { img.onload = null; img.onerror = null; });
     };
   }, [reducedMotion]);
 
-  const showGaze = gazeActive && gazeAssetsReady && !scrollActive && !reducedMotion;
-  // Continuously blend three pre-rendered views without hard thresholds.
-  const x = Math.max(-1, Math.min(1, gazePosition.x));
-  const y = Math.max(-1, Math.min(1, gazePosition.y));
-  const opacityByDirection = {
-    left: Math.max(0, -x),
-    center: 1 - Math.abs(x),
-    right: Math.max(0, x),
-  };
-
   return (
-    <div className="relative flex h-full w-full items-center justify-center" aria-label="Mascota D8 animada mediante el desplazamiento">
+    <div className="relative flex h-full w-full items-center justify-center" aria-label="Mascota D8: seguimiento del puntero y animación por scroll">
       <canvas
         ref={canvasRef}
-        className={`relative z-10 h-full max-h-[min(80vh,800px)] w-auto max-w-full object-contain drop-shadow-[0_0_44px_rgba(255,199,45,0.15)] transition-opacity duration-350 ${ready && !failed && !showGaze ? "opacity-100" : "opacity-0"}`}
+        className={`relative z-10 h-full max-h-[min(80vh,800px)] w-auto max-w-full object-contain drop-shadow-[0_0_34px_rgba(255,199,45,0.12)] transition-opacity duration-300 ${ready ? "opacity-100" : "opacity-0"}`}
         role="img"
-        aria-label="Personaje D8: desplazate para controlar sus movimientos"
+        aria-label="Desplazate para animar al personaje, mové el puntero para girarlo"
       />
-      {gazeAssetsReady && !reducedMotion && (["left", "center", "right"] as const).map(direction => (
-        <motion.img
-          key={direction}
-          src={`/d8_look_${direction}.webp`}
-          alt=""
-          aria-hidden="true"
-          draggable={false}
-          initial={false}
-          animate={{
-            opacity: showGaze ? opacityByDirection[direction] : 0,
-            y: showGaze ? y * 12 : 0,
-            rotateZ: showGaze ? x * 1.4 : 0,
-            scale: showGaze ? 1.015 : 1,
-          }}
-          transition={{ type: "tween", ease: [0.22, 1, 0.36, 1], duration: 0.34 }}
-          className="pointer-events-none absolute z-20 h-full max-h-[min(80vh,800px)] w-auto max-w-full origin-center object-contain drop-shadow-[0_0_44px_rgba(255,199,45,0.15)]"
-        />
-      ))}
-      {(!ready || failed) && !showGaze && (
+      {!ready && (
         <img
           src="/d8-mascot.webp"
           alt="Mascota D8"
           className="absolute inset-0 mx-auto h-full max-h-[80vh] w-auto object-contain"
-          onError={(e) => { if (!e.currentTarget.src.endsWith("avatard8.png")) e.currentTarget.src = "/avatard8.png"; }}
+          onError={e => {
+            if (!e.currentTarget.src.endsWith("avatard8.png")) e.currentTarget.src = "/avatard8.png";
+          }}
         />
       )}
+      {failed && <span className="sr-only">Algunas imágenes de animación no se pudieron cargar.</span>}
     </div>
   );
 }
