@@ -12,11 +12,26 @@ const FRAME_W = 225;
 const FRAME_H = 385;
 const SHEET_PATHS = [1, 2, 3, 4].map((n) => `/d8-frames-${n}.webp`);
 
-export default function ScrollMascot() {
+type Gaze = "left" | "center" | "right";
+
+export default function ScrollMascot({ gaze, gazeActive }: { gaze: Gaze; gazeActive: boolean }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [failed, setFailed] = useState(false);
   const [ready, setReady] = useState(false);
   const reducedMotion = useReducedMotion();
+  const [gazeAssetsReady, setGazeAssetsReady] = useState(false);
+  const [scrollActive, setScrollActive] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    Promise.all(["left", "center", "right"].map(direction => new Promise<void>((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve();
+      img.onerror = () => reject(new Error("gaze image unavailable"));
+      img.src = `/d8_look_${direction}.webp`;
+    }))).then(() => { if (active) setGazeAssetsReady(true); }).catch(() => {});
+    return () => { active = false; };
+  }, []);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -46,11 +61,17 @@ export default function ScrollMascot() {
       context.imageSmoothingQuality = "high";
       context.drawImage(sheet, x, y, FRAME_W, FRAME_H, 0, 0, FRAME_W, FRAME_H);
     };
+    let releaseScroll: number | undefined;
     const updateProgress = () => {
       const rect = section.getBoundingClientRect();
       const scrollable = Math.max(1, rect.height - window.innerHeight);
       const progress = Math.max(0, Math.min(1, -rect.top / scrollable));
       targetFrame = reducedMotion ? 0 : progress * (TOTAL_FRAMES - 1);
+      if (!reducedMotion) {
+        setScrollActive(true);
+        window.clearTimeout(releaseScroll);
+        releaseScroll = window.setTimeout(() => setScrollActive(false), 280);
+      }
     };
     const tick = () => {
       if (cancelled) return;
@@ -94,21 +115,27 @@ export default function ScrollMascot() {
     return () => {
       cancelled = true;
       window.cancelAnimationFrame(rafId);
+      window.clearTimeout(releaseScroll);
       window.removeEventListener("scroll", updateProgress);
       window.removeEventListener("resize", updateProgress);
       images.forEach(img => { img.onload = null; img.onerror = null; });
     };
   }, [reducedMotion]);
 
+  const showGaze = gazeActive && gazeAssetsReady && !scrollActive && !reducedMotion;
+
   return (
     <div className="relative flex h-full w-full items-center justify-center" aria-label="Mascota D8 animada mediante el desplazamiento">
       <canvas
         ref={canvasRef}
-        className={`relative z-10 h-full max-h-[min(80vh,800px)] w-auto max-w-full object-contain drop-shadow-[0_0_44px_rgba(255,199,45,0.15)] transition-opacity duration-500 ${ready && !failed ? "opacity-100" : "opacity-0"}`}
+        className={`relative z-10 h-full max-h-[min(80vh,800px)] w-auto max-w-full object-contain drop-shadow-[0_0_44px_rgba(255,199,45,0.15)] transition-opacity duration-200 ${ready && !failed && !showGaze ? "opacity-100" : "opacity-0"}`}
         role="img"
         aria-label="Personaje D8: desplazate para controlar sus movimientos"
       />
-      {(!ready || failed) && (
+      {showGaze && (["left","center","right"] as const).map(direction => (
+        <img key={direction} src={`/d8_look_${direction}.webp`} alt="" aria-hidden="true" draggable={false} className={`pointer-events-none absolute z-20 h-full max-h-[min(80vh,800px)] w-auto max-w-full object-contain drop-shadow-[0_0_44px_rgba(255,199,45,0.15)] transition-opacity duration-200 ${gaze === direction ? "opacity-100" : "opacity-0"}`} />
+      ))}
+      {(!ready || failed) && !showGaze && (
         <img
           src="/d8-mascot.webp"
           alt="Mascota D8"
