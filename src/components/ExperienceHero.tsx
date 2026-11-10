@@ -9,7 +9,7 @@ type ExperienceHeroProps = { onContactClick: () => void };
 export default function ExperienceHero({ onContactClick }: ExperienceHeroProps) {
   const reducedMotion = useReducedMotion();
   const [booting, setBooting] = useState(true);
-  const [gaze, setGaze] = useState<"left" | "center" | "right">("center");
+  const [gazePosition, setGazePosition] = useState({ x: 0, y: 0 });
   const [gazeActive, setGazeActive] = useState(false);
   const [tvOpen, setTvOpen] = useState(false);
   const [introVideoUnavailable, setIntroVideoUnavailable] = useState(false);
@@ -45,19 +45,22 @@ export default function ExperienceHero({ onContactClick }: ExperienceHeroProps) 
         onPointerMove={(event) => {
           if (reducedMotion || (event.pointerType === "touch" && event.buttons === 0)) return;
           const rect = event.currentTarget.getBoundingClientRect();
-          const normalized = (event.clientX - rect.left) / Math.max(1, rect.width);
-          setGaze(normalized < 0.37 ? "left" : normalized > 0.63 ? "right" : "center");
+          const x = Math.max(-1, Math.min(1, (2 * (event.clientX - rect.left)) / Math.max(1, rect.width) - 1));
+          const y = Math.max(-1, Math.min(1, (2 * (event.clientY - rect.top)) / Math.max(1, rect.height) - 1));
+          setGazePosition({ x, y });
           setGazeActive(true);
         }}
         onPointerDown={(event) => {
           if (reducedMotion || event.pointerType !== "touch") return;
           const rect = event.currentTarget.getBoundingClientRect();
-          const normalized = (event.clientX - rect.left) / Math.max(1, rect.width);
-          setGaze(normalized < 0.37 ? "left" : normalized > 0.63 ? "right" : "center");
+          setGazePosition({
+            x: Math.max(-1, Math.min(1, (2 * (event.clientX - rect.left)) / Math.max(1, rect.width) - 1)),
+            y: Math.max(-1, Math.min(1, (2 * (event.clientY - rect.top)) / Math.max(1, rect.height) - 1)),
+          });
           setGazeActive(true);
         }}
-        onPointerLeave={() => { setGaze("center"); setGazeActive(false); }}
-        onPointerCancel={() => setGazeActive(false)}
+        onPointerLeave={() => { setGazePosition({ x: 0, y: 0 }); setGazeActive(false); }}
+        onPointerCancel={() => { setGazePosition({ x: 0, y: 0 }); setGazeActive(false); }}
       >
         <div className="sticky top-0 isolate h-svh w-full overflow-hidden">
           {/* Hero interactivo: secuencia WebP alpha con parallax por mouse, sin reproducción de video. */}
@@ -67,7 +70,7 @@ export default function ExperienceHero({ onContactClick }: ExperienceHeroProps) 
             <div className="absolute right-0 top-0 h-1/2 w-1/2 opacity-20 blur-3xl" style={{background:"radial-gradient(ellipse,#facc15,transparent 65%)"}} />
           </div>
           <div className="pointer-events-none absolute -right-[7%] bottom-0 top-0 z-[1] flex h-full w-full items-center justify-end overflow-hidden md:w-[78%]">
-            <ScrollMascot gaze={gaze} gazeActive={gazeActive} />
+            <ScrollMascot gazePosition={gazePosition} gazeActive={gazeActive} />
           </div>
           {/* Degradado editorial para asegurar que el texto sea legible sobre la secuencia. */}
           <div className="pointer-events-none absolute inset-0 z-[2] bg-gradient-to-r from-[#080a0d] via-[#080a0deb] to-transparent md:via-[#080a0dc0]" />
