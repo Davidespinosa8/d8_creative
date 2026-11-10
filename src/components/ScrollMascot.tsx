@@ -1,92 +1,126 @@
 import { useEffect, useRef, useState } from "react";
 import { useReducedMotion } from "framer-motion";
 
-const TOTAL_FRAMES = 240;
-const FRAMES_PER_SHEET = 64;
-const COLUMNS = 8;
-const FRAME_W = 225;
-const FRAME_H = 385;
-const SHEET_PATHS = [1, 2, 3, 4].map(n => `/d8-frames-${n}.webp`);
+const SCROLL_COUNT = 240;
+const SCROLL_TILE_W = 225;
+const SCROLL_TILE_H = 385;
+const TURN_COUNT = 10;
+const TURN_TILE_W = 320;
+const TURN_TILE_H = 640;
 
 type Props = { gazePosition: { x: number; y: number }; gazeActive: boolean };
 
-/** The experimental 15-frame turntable is intentionally disabled until the source assets are clean. */
-export default function ScrollMascot(_props: Props) {
+/** A single canvas alternates scroll motion and 10 aligned turntable views.
+ * The turntable atlas is optional; scrolling always has its original fallback.
+ */
+export default function ScrollMascot({ gazePosition, gazeActive }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const pointer = useRef(gazePosition);
+  const pointerActive = useRef(gazeActive);
   const [ready, setReady] = useState(false);
-  const [failed, setFailed] = useState(false);
   const reducedMotion = useReducedMotion();
+
+  useEffect(() => { pointer.current = gazePosition; }, [gazePosition]);
+  useEffect(() => { pointerActive.current = gazeActive; }, [gazeActive]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
     const section = document.getElementById("d8-hero-scroll-scene");
-    const context = canvas?.getContext("2d", { alpha: true });
-    if (!canvas || !context || !section) return;
-
-    const sheets: HTMLImageElement[] = [];
+    const ctx = canvas?.getContext("2d", { alpha: true });
+    if (!canvas || !section || !ctx) return;
+    canvas.width = TURN_TILE_W;
+    canvas.height = TURN_TILE_H;
     let disposed = false;
     let raf = 0;
-    let current = 0;
-    let target = 0;
-    let last = -1;
+    let scrollTarget = 0;
+    let scrollCurrent = 0;
+    let turnCurrent = 4.5;
+    let scrollingUntil = 0;
+    let currentId = "";
+    let atlasReady = false;
+    const scrollImages: HTMLImageElement[] = [];
+    const atlas = new Image();
 
-    canvas.width = FRAME_W;
-    canvas.height = FRAME_H;
-
-    const update = () => {
+    const render = (kind: "scroll" | "turn", index: number): boolean => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      if (kind === "turn") {
+        if (!atlasReady) return false;
+        const tileX = index % 5;
+        const tileY = Math.floor(index / 5);
+        ctx.drawImage(atlas, tileX * TURN_TILE_W, tileY * TURN_TILE_H,
+          TURN_TILE_W, TURN_TILE_H, 0, 0, canvas.width, canvas.height);
+        return true;
+      }
+      const sheet = scrollImages[Math.floor(index / 64)];
+      if (!sheet?.complete || !sheet.naturalWidth) return false;
+      const slot = index % 64;
+      // Center content and keep the floor baseline aligned between the two systems.
+      const drawnWidth = 320;
+      const drawnHeight = 548;
+      ctx.drawImage(sheet, (slot % 8) * SCROLL_TILE_W,
+        Math.floor(slot / 8) * SCROLL_TILE_H,
+        SCROLL_TILE_W, SCROLL_TILE_H,
+        0, canvas.height - drawnHeight, drawnWidth, drawnHeight);
+      return true;
+    };
+    const updatePosition = () => {
       const rect = section.getBoundingClientRect();
       const distance = Math.max(1, rect.height - window.innerHeight);
-      target = reducedMotion ? 0 : Math.max(0, Math.min(1, -rect.top / distance)) * (TOTAL_FRAMES - 1);
+      const percent = Math.max(0, Math.min(1, -rect.top / distance));
+      scrollTarget = reducedMotion ? 0 : percent * (SCROLL_COUNT - 1);
     };
-    const draw = (index: number) => {
-      const sheet = sheets[Math.floor(index / FRAMES_PER_SHEET)];
-      if (!sheet?.complete || !sheet.naturalWidth) return false;
-      const tile = index % FRAMES_PER_SHEET;
-      context.clearRect(0, 0, FRAME_W, FRAME_H);
-      context.drawImage(sheet, (tile % COLUMNS) * FRAME_W, Math.floor(tile / COLUMNS) * FRAME_H, FRAME_W, FRAME_H, 0, 0, FRAME_W, FRAME_H);
-      return true;
+    const onScroll = () => {
+      updatePosition();
+      scrollingUntil = performance.now() + 320;
     };
     const tick = () => {
       if (disposed) return;
-      current += (target - current) * 0.18;
-      if (Math.abs(target - current) < 0.08) current = target;
-      const index = Math.min(TOTAL_FRAMES - 1, Math.max(0, Math.round(current)));
-      if (index !== last && draw(index)) {
-        last = index;
+      scrollCurrent += (scrollTarget - scrollCurrent) * 0.18;
+      turnCurrent += ((pointerActive.current ? Math.max(-1, Math.min(1, pointer.current.x)) : 0) * 4.5 + 4.5 - turnCurrent) * 0.12;
+
+      const useTurn = !reducedMotion && atlasReady && performance.now() > scrollingUntil;
+      const index = useTurn
+        ? Math.min(TURN_COUNT - 1, Math.max(0, Math.round(turnCurrent)))
+        : Math.min(SCROLL_COUNT - 1, Math.max(0, Math.round(scrollCurrent)));
+      const id = (useTurn ? "turn" : "scroll") + index;
+      if (id !== currentId && render(useTurn ? "turn" : "scroll", index)) {
+        currentId = id;
         setReady(true);
       }
-      raf = window.requestAnimationFrame(tick);
+      raf = requestAnimationFrame(tick);
     };
-    SHEET_PATHS.forEach(src => {
-      const img = new Image();
-      img.onload = () => { if (!disposed) draw(Math.round(current)); };
-      img.onerror = () => { if (!disposed) setFailed(true); };
-      sheets.push(img);
-      img.src = src;
-    });
-    update();
-    window.addEventListener("scroll", update, { passive: true });
-    window.addEventListener("resize", update);
-    raf = window.requestAnimationFrame(tick);
+    for (let n = 1; n <= 4; n++) {
+      const image = new Image();
+      image.onload = () => { currentId = ""; };
+      scrollImages.push(image);
+      image.src = `/d8-frames-${n}.webp`;
+    }
+    atlas.onload = () => {
+      if (!disposed && atlas.naturalWidth === TURN_TILE_W * 5 && atlas.naturalHeight === TURN_TILE_H * 2) {
+        atlasReady = true;
+        currentId = "";
+      }
+    };
+    atlas.onerror = () => { atlasReady = false; };
+    atlas.src = "/d8_turn_10_atlas.webp";
+    updatePosition();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", updatePosition);
+    raf = requestAnimationFrame(tick);
     return () => {
       disposed = true;
-      window.cancelAnimationFrame(raf);
-      window.removeEventListener("scroll", update);
-      window.removeEventListener("resize", update);
-      sheets.forEach(img => { img.onload = null; img.onerror = null; });
+      cancelAnimationFrame(raf);
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", updatePosition);
+      atlas.onload = null;
+      atlas.onerror = null;
+      scrollImages.forEach(image => { image.onload = null; });
     };
   }, [reducedMotion]);
 
-  return (
-    <div className="relative flex h-full w-full items-center justify-center">
-      <canvas
-        ref={canvasRef}
-        className={`relative z-10 h-full max-h-[min(80vh,800px)] w-auto max-w-full object-contain transition-opacity duration-300 ${ready ? "opacity-100" : "opacity-0"}`}
-        role="img"
-        aria-label="Personaje D8 animado por desplazamiento"
-      />
-      {!ready && <img src="/d8-mascot.webp" alt="Mascota D8" className="absolute inset-0 mx-auto h-full max-h-[80vh] w-auto object-contain" />}
-      {failed && <span className="sr-only">No se pudo cargar la animación.</span>}
-    </div>
-  );
+  return <div className="relative flex h-full w-full items-center justify-center">
+    <canvas ref={canvasRef} role="img" aria-label="Personaje D8: gira con el puntero y se anima con el scroll"
+      className={`relative z-10 h-full max-h-[min(80vh,800px)] w-auto max-w-full object-contain transition-opacity duration-300 ${ready ? "opacity-100" : "opacity-0"}`} />
+    {!ready && <img src="/d8-mascot.webp" alt="Personaje D8" className="absolute inset-0 mx-auto h-full max-h-[80vh] w-auto object-contain" />}
+  </div>;
 }
