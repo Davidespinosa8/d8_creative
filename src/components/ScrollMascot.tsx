@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useReducedMotion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 
 /**
  * Real alpha WebP frame sequences, driven by the position of the page scroll.
@@ -12,9 +12,9 @@ const FRAME_W = 225;
 const FRAME_H = 385;
 const SHEET_PATHS = [1, 2, 3, 4].map((n) => `/d8-frames-${n}.webp`);
 
-type Gaze = "left" | "center" | "right";
+type GazePosition = { x: number; y: number };
 
-export default function ScrollMascot({ gaze, gazeActive }: { gaze: Gaze; gazeActive: boolean }) {
+export default function ScrollMascot({ gazePosition, gazeActive }: { gazePosition: GazePosition; gazeActive: boolean }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [failed, setFailed] = useState(false);
   const [ready, setReady] = useState(false);
@@ -123,17 +123,40 @@ export default function ScrollMascot({ gaze, gazeActive }: { gaze: Gaze; gazeAct
   }, [reducedMotion]);
 
   const showGaze = gazeActive && gazeAssetsReady && !scrollActive && !reducedMotion;
+  // Continuously blend three pre-rendered views without hard thresholds.
+  const x = Math.max(-1, Math.min(1, gazePosition.x));
+  const y = Math.max(-1, Math.min(1, gazePosition.y));
+  const opacityByDirection = {
+    left: Math.max(0, -x),
+    center: 1 - Math.abs(x),
+    right: Math.max(0, x),
+  };
 
   return (
     <div className="relative flex h-full w-full items-center justify-center" aria-label="Mascota D8 animada mediante el desplazamiento">
       <canvas
         ref={canvasRef}
-        className={`relative z-10 h-full max-h-[min(80vh,800px)] w-auto max-w-full object-contain drop-shadow-[0_0_44px_rgba(255,199,45,0.15)] transition-opacity duration-200 ${ready && !failed && !showGaze ? "opacity-100" : "opacity-0"}`}
+        className={`relative z-10 h-full max-h-[min(80vh,800px)] w-auto max-w-full object-contain drop-shadow-[0_0_44px_rgba(255,199,45,0.15)] transition-opacity duration-350 ${ready && !failed && !showGaze ? "opacity-100" : "opacity-0"}`}
         role="img"
         aria-label="Personaje D8: desplazate para controlar sus movimientos"
       />
-      {showGaze && (["left","center","right"] as const).map(direction => (
-        <img key={direction} src={`/d8_look_${direction}.webp`} alt="" aria-hidden="true" draggable={false} className={`pointer-events-none absolute z-20 h-full max-h-[min(80vh,800px)] w-auto max-w-full object-contain drop-shadow-[0_0_44px_rgba(255,199,45,0.15)] transition-opacity duration-200 ${gaze === direction ? "opacity-100" : "opacity-0"}`} />
+      {gazeAssetsReady && !reducedMotion && (["left", "center", "right"] as const).map(direction => (
+        <motion.img
+          key={direction}
+          src={`/d8_look_\${direction}.webp`}
+          alt=""
+          aria-hidden="true"
+          draggable={false}
+          initial={false}
+          animate={{
+            opacity: showGaze ? opacityByDirection[direction] : 0,
+            y: showGaze ? y * 12 : 0,
+            rotateZ: showGaze ? x * 1.4 : 0,
+            scale: showGaze ? 1.015 : 1,
+          }}
+          transition={{ type: "tween", ease: [0.22, 1, 0.36, 1], duration: 0.34 }}
+          className="pointer-events-none absolute z-20 h-full max-h-[min(80vh,800px)] w-auto max-w-full origin-center object-contain drop-shadow-[0_0_44px_rgba(255,199,45,0.15)]"
+        />
       ))}
       {(!ready || failed) && !showGaze && (
         <img
